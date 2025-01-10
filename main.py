@@ -6,8 +6,8 @@ import time
 from collections import Counter
 
 #API KEYS
-API_KEY = "9051E62B25041C579CCB4ACA0A9A9345"
-YOUR_STEAM_ID = "76561198210669612"
+API_KEY = ""
+YOUR_STEAM_ID = ""
 
 def call_steam_api(endpoint, params):
     """Helper function to call the Steam API."""
