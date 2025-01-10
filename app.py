@@ -1,13 +1,13 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import time
 import requests
 from collections import Counter
-from datetime import datetime
-import matplotlib.pyplot as plt
-import time
-from collections import Counter
 
-#API KEYS
+app = Flask(__name__)
+CORS(app)  # Enable CORS so that your React app on another port can access it
+
 API_KEY = "9051E62B25041C579CCB4ACA0A9A9345"
-YOUR_STEAM_ID = "76561198210669612"
 
 def call_steam_api(endpoint, params):
     """Helper function to call the Steam API."""
@@ -34,36 +34,21 @@ def get_friends_list(steam_id):
     data = call_steam_api(endpoint, params)
     return data.get("friendslist", {}).get("friends", [])
 
-# Example function to fetch friends' games
-def get_friends_owned_games(friends_ids):
-    friends_games = []
+# Feature 3: Fetch friends' games
+def get_friends_games(friends_ids):
+    friends_games = Counter()
     for friend in friends_ids:
-        owned_games = get_owned_games(friend["steamid"])  # Fetch each friend's owned games
-        friends_games.extend([game["name"] for game in owned_games])
+        friend_games = get_owned_games(friend["steamid"])
+        friends_games.update([game["name"] for game in friend_games])
     return friends_games
 
-# New function to compute number of friends owning each recommended game
-def compute_friends_ownership(recommended_games, friends_games_list):
-    """
-    Count how many friends own each recommended game.
-    """
-    # Create a counter for all games owned by friends
-    friends_game_counter = Counter(friends_games_list)
 
-    # Prepare data for the frontend
-    ownership_data = []
-    for game in recommended_games:
-        ownership_data.append({
-            "name": game,
-            "friend_count": friends_game_counter[game]
-        })
-    return ownership_data
 
 # Feature 4: Recommend games
 def recommend_games(your_games, friends_games):
     your_game_names = {game["name"] for game in your_games}
     recommendations = [game for game, count in friends_games.items() if game not in your_game_names]
-    return recommendations
+    return recommendations[:15]  # Return only the first 15 recommendations
 
 # Feature 5: Track achievements
 def get_achievements(steam_id, appid):
@@ -173,56 +158,53 @@ def find_underplayed_highly_rated_games(your_games, max_playtime=120):
                         'genres': genres
                     })
     return underplayed_games
+# (Paste your existing functions here: call_steam_api, get_owned_games, etc.)
+# For brevity, let's imagine we copy all your existing Python code.
 
-if __name__ == "__main__":
-    # Fetch games
-    your_games = get_owned_games(YOUR_STEAM_ID)
-    print("Your Games:")
-    for game in your_games:
-        print(f"- {game['name']} ({game['playtime_forever'] // 60} hours)")
+@app.route("/api/steam-data", methods=["GET"])
+def get_steam_data():
+    """
+    Expects a `steamid` query parameter. Example: /api/steam-data?steamid=76561198210669612
+    Returns JSON containing all processed Steam data.
+    """
+    steam_id = request.args.get("steamid", None)
+    if not steam_id:
+        return jsonify({"error": "steamid is required"}), 400
 
-    # Fetch friends' games
-    friends_ids = get_friends_list(YOUR_STEAM_ID)
+    # 1. Fetch your games
+    your_games = get_owned_games(steam_id)
+    
+    # 2. Fetch friends
+    friends_ids = get_friends_list(steam_id)
     friends_games = get_friends_games(friends_ids)
 
-    # Recommend games
+    # 3. Recommendations
     recommendations = recommend_games(your_games, friends_games)
-    print("\nRecommended Games (Your Friends Play, You Don't):")
-    for game in recommendations[:5]:
-        print(f"- {game}")
-
-    # Achievements for top game
+    
+    # 4. Achievements for the top game (optional)
+    achievements = []
     if your_games:
-        print("\nAchievements for Your Top Game:")
         top_game = your_games[0]
-        achievements = get_achievements(YOUR_STEAM_ID, top_game["appid"])
-        if achievements:
-            for achievement in achievements[:5]:  
-                print(f"- {achievement['apiname']}: {'Unlocked' if achievement['achieved'] else 'Locked'}")
-        else:
-            print("No achievements available for this game.")
+        achievements = get_achievements(steam_id, top_game["appid"])
 
-    # Analyze playtime and genres
+    # 5. Analyze playtime/genres
     total_playtime, top_games, genres = analyze_playtime_and_genres(your_games)
-    print(f"\nTotal Playtime: {total_playtime:.2f} hours")
-    print("Top 5 Games by Playtime:")
-    for game in top_games:
-        print(f"- {game['name']} ({game['playtime_forever'] // 60} hours)")
-    print("Game Genres Distribution:")
-    for genre, count in genres.items():
-        print(f"- {genre}: {count} games")
 
-    # Underplayed Highly-Rated Games
-    print("\nUnderplayed Highly-Rated Games in Your Library:")
+    # 6. Underplayed highly-rated games
     underplayed_games = find_underplayed_highly_rated_games(your_games)
-    if underplayed_games:
-        for game in underplayed_games:
-            print(f"- {game['name']} (Playtime: {game['playtime_hours']:.2f} hours, User Rating: {game['user_rating']}/100)")
-    else:
-        print("No underplayed highly-rated games found in your library.")
 
-    # Get favorite genres
-    favorite_genres = [genre for genre, _ in genres.most_common(3)]
-    print("\nYour Favorite Genres:")
-    for genre in favorite_genres:
-        print(f"- {genre}")
+    # 7. Return the collected data as JSON
+    data_to_return = {
+        "your_games": your_games,
+        "friends_count": len(friends_ids),
+        "recommendations": recommendations,
+        "top_game_achievements": achievements,
+        "total_playtime_hours": total_playtime,
+        "top_5_games": top_games,
+        "genres_distribution": dict(genres),
+        "underplayed_highly_rated_games": underplayed_games
+    }
+    return jsonify(data_to_return)
+
+if __name__ == "__main__":
+    app.run(debug=True, port=5000)
