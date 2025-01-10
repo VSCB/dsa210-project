@@ -56,7 +56,7 @@ This project allowed me to exercise **data wrangling** skills and combine them w
   Frontend library for creating a single-page application. It provides the form to enter SteamID, makes API requests to the Flask server, and displays the resulting data, stats, and visualizations.
 
 - **Pandas**  
-  Useful for data cleaning and transformation during prototyping or deeper EDA. Optional but handy in your analysis scripts.
+  Useful for data cleaning and transformation during prototyping or deeper EDA.
 
 - **Requests**  
   Manages HTTP calls to the **Steam Web API** and **Steam Storefront API** in Python.
@@ -107,7 +107,6 @@ On the frontend, we rely on **react-chartjs-2** to create interactive charts. Co
 
 - **Bar Chart**: Top 5 Games by playtime.
 - **Pie / Doughnut Chart**: Distribution of genres in the user’s library.
-- **Bar Chart (optional)**: Number of friends who own each recommended game.
 
 For more in-depth exploration, a local Jupyter notebook (with libraries like Matplotlib or Seaborn) can be used. However, the user-facing data remains accessible in the React UI.
 
@@ -123,11 +122,10 @@ For more in-depth exploration, a local Jupyter notebook (with libraries like Mat
 We filter by low playtime (e.g., ≤120 minutes) and high Metacritic (≥75). This method highlights potential “hidden gems” in the user’s collection.
 
 ### Recommendations Based on Friends
-1. Combine all friends’ libraries into a single dataset, often using a `Counter`.
+1. Combine all friends’ libraries into a single dataset
 2. Exclude any games the user already owns.
 3. Sort by popularity (how many friends own it).
 4. Limit to a smaller set (e.g., 15) for readability.
-5. Optionally, display the friend-ownership counts in a bar chart.
 
 ---
 
