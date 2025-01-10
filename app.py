@@ -7,7 +7,7 @@ from collections import Counter
 app = Flask(__name__)
 CORS(app)  # Enable CORS so that your React app on another port can access it
 
-API_KEY = "9051E62B25041C579CCB4ACA0A9A9345"
+API_KEY = ""
 
 def call_steam_api(endpoint, params):
     """Helper function to call the Steam API."""
