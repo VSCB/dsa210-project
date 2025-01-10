@@ -99,15 +99,15 @@ For each AppID, the **Storefront** endpoint (`https://store.steampowered.com/api
 4. **Exclude** user-owned games when building a “recommended games” list to avoid duplicates.
 
 The final JSON typically includes:
-```json
-{
+
   "your_games": [...],
   "recommendations": [...],
   "underplayed_highly_rated_games": [...],
   "top_5_games": [...],
   "friends_count": 42,
-  ...
-}
+  
+
+
 This is then returned to the React frontend, which displays all relevant stats and visualizations.
 
 ## Data Visualizations
